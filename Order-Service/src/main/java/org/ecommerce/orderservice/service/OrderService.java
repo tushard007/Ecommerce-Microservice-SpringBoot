@@ -6,6 +6,7 @@ import org.ecommerce.orderservice.dto.OrderRequest;
 import org.ecommerce.orderservice.model.Order;
 import org.ecommerce.orderservice.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import org.ecommerce.orderservice.client.InventoryClient;
 
 import java.util.UUID;
 
@@ -15,10 +16,16 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final InventoryClient inventoryClient;
 
     public void placeOrder(OrderRequest orderRequest) {
-        var order = mapToOrder(orderRequest);
-        orderRepository.save(order);
+        boolean inStock = inventoryClient.isInStock(orderRequest.skuCode(), orderRequest.quantity());
+        if (inStock) {
+            var order = mapToOrder(orderRequest);
+            orderRepository.save(order);
+        } else {
+            throw new RuntimeException("Product with SkuCode " + orderRequest.skuCode() + "is not in stock");
+        }
     }
 
     private static Order mapToOrder(OrderRequest orderRequest) {
@@ -30,3 +37,4 @@ public class OrderService {
         return order;
     }
 }
+
